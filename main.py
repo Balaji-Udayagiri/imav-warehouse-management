@@ -22,6 +22,7 @@ tello = Tello()
 tello.connect()
 tello.streamoff()
 tello.streamon()
+rcout = np.zeros(4)
 
 def img_resize(im):
 	fx = 7.092159469231584126e+02
@@ -60,14 +61,43 @@ if __name__ == '__main__':
 	#camera = cv2.VideoCapture(0)
 	#capture = tello.get_video_capture()
 	frame_read = tello.get_frame_read()
+
 	while True:
+
+		key = cv2.waitKey(1) & 0xFF;
+		print(key "123")
+		if key == ord("w"):
+			rcOut[1] = 50
+		elif key == ord("a"):
+			rcOut[0] = -50
+		elif key == ord("s"):
+			rcOut[1] = -50
+		elif key == ord("d"):
+			rcOut[0] = 50
+		elif key == ord("u"):
+			rcOut[2] = 50
+		elif key == ord("j"):
+			rcOut[2] = -50
+		elif key == ord("q"):
+			break
+		elif key == ord("t"):
+			tello.takeoff()    
+		elif key == ord("l"):
+			tello.land()
+               
+
+		else:
+			rcOut = [0,0,0,0]
+
+		# print self.rcOut
+		tello.send_rc_control(int(rcOut[0]),int(rcOut[1]),int(rcOut[2]),int(rcOut[3]))
+		rcOut = [0,0,0,0]
+
 		#ret, im = camera.read()
 		
 		frameBGR = np.copy(frame_read.frame)
 		im = imu.resize(frameBGR, width=720)
 		
-		if cv2.waitKey(1) & 0xFF == ord('q'):
-			break
 		
 		im, qrpoints, qrlist = main(im)
 		if qrpoints != []:
