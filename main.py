@@ -45,8 +45,8 @@ def img_resize(im):
 	optical_text_w = 172
 	optimal_text_h = 74
 	k = optimal_text_h/text_h
-	rows = int(im.shape[0] * k)
-	cols = int(im.shape[1] * k)
+	rows = int(im.shape[0] * 1)
+	cols = int(im.shape[1] * 1)
 	dim = (cols, rows)
 	resized = cv2.resize(im, dim, interpolation = cv2.INTER_LINEAR)
 	return resized
@@ -63,9 +63,43 @@ if __name__ == '__main__':
 	frame_read = tello.get_frame_read()
 
 	while True:
+		#ret, im = camera.read()
+		
+		frameBGR = np.copy(frame_read.frame)
+		im = imu.resize(frameBGR, width=720)
+		
+		
+		im, qrpoints, qrlist = main(im)
+		if qrpoints != []:
+	  		print(qrlist)
 
-		key = cv2.waitKey(1) & 0xFF;
-		print(key "123")
+		#RESIZE
+		#CROP
+		#im = img_resize(im)
+		im, text, conf = return_text(im)
+		print(len(qrlist))
+		for i in range(len(qrlist)):
+			Data = qrlist[i]
+			
+			#Print recognized text
+			if text != "" and text != " ":
+				text = text.replace('_', '')
+				text = text.replace('\\', '')
+				text = text.replace('/', '')
+				text = text.replace('O', '0')
+				print("text detected: %s"%(text))
+
+				to_print = 0
+				rex1 = re.compile("^[0-9]{2}[A-Z]$")
+				rex2 = re.compile("^[0-9][A-Z]$")
+				if rex1.match(text) or rex2.match(text):
+					to_print = 1
+
+				if(conf>60 and to_print):
+					f.write('%s,%s,\n'%(Data, text))
+
+		cv2.imshow("Results", im)
+		key = cv2.waitKey(2) & 0xFF;
 		if key == ord("w"):
 			rcOut[1] = 50
 		elif key == ord("a"):
@@ -84,8 +118,6 @@ if __name__ == '__main__':
 			tello.takeoff()    
 		elif key == ord("l"):
 			tello.land()
-               
-
 		else:
 			rcOut = [0,0,0,0]
 
@@ -93,48 +125,11 @@ if __name__ == '__main__':
 		tello.send_rc_control(int(rcOut[0]),int(rcOut[1]),int(rcOut[2]),int(rcOut[3]))
 		rcOut = [0,0,0,0]
 
-		#ret, im = camera.read()
-		
-		frameBGR = np.copy(frame_read.frame)
-		im = imu.resize(frameBGR, width=720)
-		
-		
-		im, qrpoints, qrlist = main(im)
-		if qrpoints != []:
-	  		print(qrlist)
-
-		#RESIZE
-		#CROP
-		im = img_resize(im)
-		im, text, conf = return_text(im)
-		print(len(qrlist))
-		for i in range(len(qrlist)):
-			Data = qrlist[i]
-			
-			#Print recognized text
-			if text != "" and text != " ":
-				text.replace('_', '')
-				text.replace('\\', '')
-				text.replace('/', '')
-				text.replace('O', '0')
-				print("text detected: %s"%(text))
-
-				to_print = 0
-				rex1 = re.compile("^[0-9]{2}[A-Z]$")
-				rex2 = re.compile("^[0-9][A-Z]$")
-				if rex1.match(text) or rex2.match(text):
-					to_print = 1
-
-				if(conf>60 and to_print):
-					f.write('%s,%s,\n'%(Data, text))
-
-		cv2.imshow("Results", im)
-		cv2.waitKey(1)
 
 	f.close()
 
 tello.end()
-capture.release()
+#capture.release()
 cv2.destroyAllWindows()
 tello.streamoff()
 
