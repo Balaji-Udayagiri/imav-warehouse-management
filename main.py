@@ -17,13 +17,10 @@ import pytesseract
 from qrcode import *
 from text import *
 
-<<<<<<< HEAD
-Mat src, srcHSV;
-Mat srcH;
-vector<Mat> channels;
-=======
+
+
 def apply_contrast(im):
-	lab= cv2.cvtColor(im, cv2.COLOR_BGR2LAB)
+	"""lab= cv2.cvtColor(im, cv2.COLOR_BGR2LAB)
 
 	#-----Splitting the LAB image to different channels-------------------------
 	l, a, b = cv2.split(lab)
@@ -36,10 +33,14 @@ def apply_contrast(im):
 	limg = cv2.merge((cl,a,b))
 
 	#-----Converting image from LAB Color model to RGB model--------------------
-	im = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
+	im = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)"""
 
+	im_hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
+	h,s,v = cv2.split(im_hsv)
+	ret, v = cv2.threshold(v,127,255,cv2.THRESH_BINARY)
+	im_hsv[:, :, 2] = v
+	im = cv2.cvtColor(im_hsv, cv2.COLOR_HSV2BGR)
 	return im
-
 def apply_thresh(img):
 
 	img1 = np.zeros(img.shape)
@@ -48,7 +49,6 @@ def apply_thresh(img):
 	for channel in range(3):
 		img1[:][:][channel] = np.multiply(mask, img[:][:][channel])
 	return img1 
->>>>>>> 5110b4b916799b1e679d5dc031cc1fd7e36851c5
 
 tello = Tello()
 tello.connect()
@@ -86,13 +86,13 @@ def img_resize(im):
 # Main 
 if __name__ == '__main__':
  
-	f = open('warehouse.csv','w')
+	f = open('/home/balaji/warehouse.csv','w')
 	f.write('%s,%s,\n'%("QR_Data", "Alphanum_text"))
 	f.close()
 
 	# Read feed
 	#camera = cv2.VideoCapture(0)
-	#capture = tello.get_video_capture()
+	capture = tello.get_video_capture()
 	frame_read = tello.get_frame_read()
 
 	while True:
@@ -101,8 +101,6 @@ if __name__ == '__main__':
 		frameBGR = np.copy(frame_read.frame)
 		im = imu.resize(frameBGR, width=720)
 		
-		im_hsv = (im, cv2.COLOR_BGR2HSV);
-		cv2.split(im, channels);
 		
 		
 		im, qrpoints, qrlist = main(im)
@@ -166,8 +164,8 @@ if __name__ == '__main__':
 			rcOut = [0,0,0,0]
 
 		# print self.rcOut
-		tello.send_rc_control(int(rcOut[0]),int(rcOut[1]),int(rcOut[2]),int(rcOut[3]))
-		rcOut = [0,0,0,0]
+		#tello.send_rc_control(int(rcOut[0]),int(rcOut[1]),int(rcOut[2]),int(rcOut[3]))
+		#rcOut = [0,0,0,0]
 
 	f.close()
 
