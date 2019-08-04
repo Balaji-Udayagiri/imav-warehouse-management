@@ -13,6 +13,7 @@ import time
 import asyncio
 import numpy as np
 import cv2
+import PIL.Image as pim
 import pytesseract
 from qrcode import *
 from text import *
@@ -37,12 +38,10 @@ def apply_contrast(im):
 
 def apply_thresh(img):
 
-	img1 = np.zeros(img.shape)
-	mask = np.multiply(np.multiply((img[:][:][0]<100), (img[:][:][1]<100)), (img[:][:][2]<100))
-	mask = np.invert(mask)
-	for channel in range(3):
-		img1[:][:][channel] = np.multiply(mask, img[:][:][channel])
-	return img1 
+	lower = np.array([50, 50, 50])
+	upper = np.array([255, 255, 255])
+	mask = cv2.inRange(img, lower, upper)
+	img = cv2.bitwise_and(img, img, mask = mask)
 
 tello = Tello()
 tello.connect()
@@ -102,8 +101,11 @@ if __name__ == '__main__':
 
 		#RESIZE
 		#CROP
+
 		im = img_resize(im)
-		im = apply_contrast(im)
+		#im = apply_contrast(im)
+		im = apply_thresh(im)
+
 		im, text, conf = return_text(im)
 		print(len(qrlist))
 		for i in range(len(qrlist)):
