@@ -17,6 +17,32 @@ import pytesseract
 from qrcode import *
 from text import *
 
+def apply_contrast(im):
+	lab= cv2.cvtColor(im, cv2.COLOR_BGR2LAB)
+
+	#-----Splitting the LAB image to different channels-------------------------
+	l, a, b = cv2.split(lab)
+
+	#-----Applying CLAHE to L-channel-------------------------------------------
+	clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+	cl = clahe.apply(l)
+
+	#-----Merge the CLAHE enhanced L-channel with the a and b channel-----------
+	limg = cv2.merge((cl,a,b))
+
+	#-----Converting image from LAB Color model to RGB model--------------------
+	im = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
+
+	return im
+
+def apply_thresh(img):
+
+	img1 = np.zeros(img.shape)
+	mask = np.multiply(np.multiply((img[:][:][0]<100), (img[:][:][1]<100)), (img[:][:][2]<100))
+	mask = np.invert(mask)
+	for channel in range(3):
+		img1[:][:][channel] = np.multiply(mask, img[:][:][channel])
+	return img1 
 
 tello = Tello()
 tello.connect()
@@ -45,8 +71,8 @@ def img_resize(im):
 	optical_text_w = 172
 	optimal_text_h = 74
 	k = optimal_text_h/text_h
-	rows = int(im.shape[0] * 1)
-	cols = int(im.shape[1] * 1)
+	rows = int(im.shape[0] * 1.2)
+	cols = int(im.shape[1] * 1.2)
 	dim = (cols, rows)
 	resized = cv2.resize(im, dim, interpolation = cv2.INTER_LINEAR)
 	return resized
@@ -56,6 +82,7 @@ if __name__ == '__main__':
  
 	f = open('warehouse.csv','w')
 	f.write('%s,%s,\n'%("QR_Data", "Alphanum_text"))
+	f.close()
 
 	# Read feed
 	#camera = cv2.VideoCapture(0)
@@ -75,7 +102,8 @@ if __name__ == '__main__':
 
 		#RESIZE
 		#CROP
-		#im = img_resize(im)
+		im = img_resize(im)
+		im = apply_contrast(im)
 		im, text, conf = return_text(im)
 		print(len(qrlist))
 		for i in range(len(qrlist)):
@@ -96,35 +124,41 @@ if __name__ == '__main__':
 					to_print = 1
 
 				if(conf>60 and to_print):
+					print()
+					print()
+					print("YAYAYAYAYAYYYY")
+					print()
+					print()
+					f = open('warehouse.csv','a')
 					f.write('%s,%s,\n'%(Data, text))
+					f.close()
 
 		cv2.imshow("Results", im)
-		key = cv2.waitKey(2) & 0xFF;
-		if key == ord("w"):
-			rcOut[1] = 50
-		elif key == ord("a"):
-			rcOut[0] = -50
-		elif key == ord("s"):
-			rcOut[1] = -50
-		elif key == ord("d"):
-			rcOut[0] = 50
-		elif key == ord("u"):
-			rcOut[2] = 50
-		elif key == ord("j"):
-			rcOut[2] = -50
-		elif key == ord("q"):
-			break
-		elif key == ord("t"):
+		key = cv2.waitKey(1) & 0xFF;
+		if key == ord("t"):
 			tello.takeoff()    
 		elif key == ord("l"):
 			tello.land()
+		elif key == ord("w"):
+			rcOut[1] = 25
+		elif key == ord("a"):
+			rcOut[0] = -25
+		elif key == ord("s"):
+			rcOut[1] = -25
+		elif key == ord("d"):
+			rcOut[0] = 25
+		elif key == ord("u"):
+			rcOut[2] = 25
+		elif key == ord("j"):
+			rcOut[2] = -25
+		elif key == ord("q"):
+			breaks
 		else:
 			rcOut = [0,0,0,0]
 
 		# print self.rcOut
 		tello.send_rc_control(int(rcOut[0]),int(rcOut[1]),int(rcOut[2]),int(rcOut[3]))
 		rcOut = [0,0,0,0]
-
 
 	f.close()
 

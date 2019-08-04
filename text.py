@@ -16,8 +16,8 @@ def return_text(im):
 	config1 = ('--psm 10 --oem 3 -c tessedit_char_whitelist=0123456789')
 
 	#image_to_string
-	#text = pytesseract.pytesseract.run_and_get_output(im, config="bazaar.config")
-	#print("run_and_get_output: %s".format(text)
+	#text = pytesseract.pytesseract.run_and_get_output(im, config="bazaaddr.config", extension = 'txt')
+	#print("run_and_get_output: %s" %(text))
 
 	#image_to_data
 	d = pytesseract.image_to_data(im, output_type=Output.DICT)
