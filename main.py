@@ -17,6 +17,9 @@ import pytesseract
 from qrcode import *
 from text import *
 
+Mat src, srcHSV;
+Mat srcH;
+vector<Mat> channels;
 
 tello = Tello()
 tello.connect()
@@ -67,6 +70,9 @@ if __name__ == '__main__':
 		
 		frameBGR = np.copy(frame_read.frame)
 		im = imu.resize(frameBGR, width=720)
+		
+		im_hsv = (im, cv2.COLOR_BGR2HSV);
+		cv2.split(im, channels);
 		
 		
 		im, qrpoints, qrlist = main(im)
