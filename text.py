@@ -20,7 +20,7 @@ def return_text(im):
 	#print("run_and_get_output: %s" %(text))
 
 	#image_to_data
-	d = pytesseract.image_to_data(im, output_type=Output.DICT)
+	d = pytesseract.image_to_data(im, config = config, output_type=Output.DICT)
 	n_boxes = len(d['level'])
 	index = 0
 	max_conf = 0
