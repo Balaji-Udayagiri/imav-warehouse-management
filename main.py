@@ -28,41 +28,43 @@ import scipy.misc
 min_confidence = 0.5
 height = width = 320
 east = "opencv-text-recognition/frozen_east_text_detection.pb" 			#enter the full path to east model
-padding = 0.01
+padding = 0.03
 
 def text_better(text):
+	list1 = list(text)
 	if(len(text)==3) :
 		if(text[0]=='S'):
-			text[0]='5'
+			list1[0]='5'
 		elif(text[0]=='I'):
-			text[0]='1'
+			list1[0]='1'
 		elif(text[0]=='A'):
-			text[0]='4'
+			list1[0]='4'
 
 
 		if(text[1]=='S'):
-			text[1]='5'
+			list1[1]='5'
 		elif(text[1]=='I'):
-			text[1]='1'
+			list1[1]='1'
 		elif(text[1]=='A'):
-			text[1]='4'
+			list1[1]='4'
 
 
 		if(text[2]=='4'):
-			text[2]='A'
+			list1[2]='A'
 		elif(text[2]=='6'):
-			text[2]='C'
+			list1[2]='C'
 		elif(text[2]=='0'):
-			text[2]='D'
+			list1[2]='D'
 		elif(text[2]=='1'):
-			text[2]='I'
+			list1[2]='I'
 		elif(text[2]=='5'):
-			text[2]='S'
+			list1[2]='S'
 		elif(text[2]=='3'):
-			text[0]='B'
+			list1[2]='B'
 		elif(text[2]=='8'):
-			text[0]='B'
+			list1[2]='B'
 
+	text = ''.join(list1)
 	return text
 
 def roi_detect(image):
