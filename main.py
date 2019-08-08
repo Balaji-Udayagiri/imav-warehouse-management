@@ -19,13 +19,16 @@ import pytesseract
 from qrcode import *
 from text import *
 from imutils.object_detection import non_max_suppression
+from PIL import Image
+import scipy
+import scipy.misc
 
 
 
 min_confidence = 0.5
 height = width = 320
-east = "opencv-text-recognition/frozen_east_text_detection.pb" 			#enter thefull path to east model
-padding = 0.2
+east = "opencv-text-recognition/frozen_east_text_detection.pb" 			#enter the full path to east model
+padding = 0.07
 
 
 def roi_detect(image):
@@ -239,14 +242,36 @@ if __name__ == '__main__':
 	#capture = tello.get_video_capture()
 	frame_read = tello.get_frame_read()
 
+	K = np.array([[5.277994366999020031e+02,0.000000000000000000e+00,3.711893449350251331e+02], [0.000000000000000000e+00,5.249025134499009937e+02,2.671209192674019732e+02], [0.000000000000000000e+00,0.000000000000000000e+00,1.000000000000000000e+00
+]], dtype = 'uint8')
+	dist = np.array([-1.941494206892808161e-01,-1.887639714668869206e-02,-5.988986169837847741e-03,-7.372353351255917582e-05,7.269696522356267065e-02], dtype = 'uint8')
+
+
 	while True:
 		#for FPS:
 		start_time = time.time()
 		
 		#ret, im = camera.read()
 		frameBGR = np.copy(frame_read.frame)
-		im = imu.resize(frameBGR, width=720)
 		
+		im = imu.resize(frameBGR, width=720)
+		"""
+		K_inv = np.linalg.inv(K)
+
+		h , w = im.shape[:2]
+
+		newcameramtx, roi = cv2.getOptimalNewCameraMatrix(K,dist,(w,h),1,(w,h))
+
+		mapx,mapy = cv2.initUndistortRectifyMap(K,dist,None,newcameramtx,(w,h),5)
+		dst = cv2.remap(im,mapx,mapy,cv2.INTER_LINEAR)
+
+		x,y,w,h = roi
+		im = dst[y:y+h,x:x+w]
+		#print("ROI: ",x,y,w,h)
+
+		#cv2.imshow("lkgs",frame2use)
+		cv2.imshow("rectified",im)
+"""
 		im, qrpoints, qrlist = main(im)
 		if qrpoints != []:
 	  		print(qrlist)
