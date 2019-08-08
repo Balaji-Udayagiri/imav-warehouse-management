@@ -9,7 +9,7 @@ def return_text(im):
 	# Define config parameters.
 		# '-l eng'  for using the English language
 		# '--oem 1' for using LSTM OCR Engine
-	config = ('-l eng --oem 1 --psm 3 -c tessedit_char_whitelist=qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM0123456789')
+	config = ('-l eng --oem 1 --psm 8 -c tessedit_char_whitelist=qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM0123456789')
 	#load_system_dawg=0 load_freq_dawg=0 --user-patterns /usr/share/tesseract-ocr/tessdata/eng.user-pattern 
 	
 	#config = ('-l eng --oem 1 --psm 3')
@@ -33,5 +33,7 @@ def return_text(im):
 			max_conf = d['conf'][i]
 			index = i
 	text = d['text'][index]
+
+	#text = pytesseract.image_to_string(im, config=config)
 	
 	return im, text, max_conf

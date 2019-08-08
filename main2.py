@@ -6,8 +6,7 @@ if '/opt/ros/kinetic/lib/python2.7/dist-packages' in sys.path:
 import re
 from djitellopy import Tello
 import imutils as imu
-from time import sleep  
-import time   
+from time import sleep     
 import os
 import random
 import time
@@ -25,7 +24,7 @@ from imutils.object_detection import non_max_suppression
 min_confidence = 0.5
 height = width = 320
 east = "opencv-text-recognition/frozen_east_text_detection.pb" 			#enter thefull path to east model
-padding = 0.2
+padding = 0.25
 
 
 def roi_detect(image):
@@ -69,10 +68,6 @@ def roi_detect(image):
 	results = []
 
 	iter = 1
-	text_list = []
-	conf_list = []
-
-	output = orig.copy()
 
 	for (startX, startY, endX, endY) in boxes:
 
@@ -99,23 +94,8 @@ def roi_detect(image):
 		roi = orig[startY:endY, startX:endX]
 		
 		im, text, conf = return_text(roi)
-
-		cv2.rectangle(output, (startX, startY), (endX, endY), (0, 0, 255), 2)
-		cv2.putText(output, text, (startX, startY - 20), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 255), 3)
-
-		
 		print("text " + str(iter) + " :" + text)
-
-		text = text.replace('_', '')
-		text = text.replace('\\', '')
-		text = text.replace('/', '')
-		
-		if(len(text) == 3):
-			text_list.append(text)
-			conf_list.append(conf)
 		iter += 1
-
-	return text_list, conf_list, output
 
 
 
@@ -179,6 +159,21 @@ def decode_predictions(scores, geometry):
 
 
 def apply_contrast(im):
+	"""lab= cv2.cvtColor(im, cv2.COLOR_BGR2LAB)
+
+	#-----Splitting the LAB image to different channels-------------------------
+	l, a, b = cv2.split(lab)
+
+	#-----Applying CLAHE to L-channel-------------------------------------------
+	clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+	cl = clahe.apply(l)
+
+	#-----Merge the CLAHE enhanced L-channel with the a and b channel-----------
+	limg = cv2.merge((cl,a,b))
+
+	#-----Converting image from LAB Color model to RGB model--------------------
+	im = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)"""
+
 	im_hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
 	h,s,v = cv2.split(im_hsv)
 	ret, v = cv2.threshold(v,127,255,cv2.THRESH_BINARY)
@@ -187,6 +182,7 @@ def apply_contrast(im):
 	return im
 
 def apply_thresh(img):
+
 	lower = np.array([50, 50, 50])
 	upper = np.array([255, 255, 255])
 	mask = cv2.inRange(img, lower, upper)
@@ -240,10 +236,8 @@ if __name__ == '__main__':
 	frame_read = tello.get_frame_read()
 
 	while True:
-		#for FPS:
-		start_time = time.time()
-		
 		#ret, im = camera.read()
+		
 		frameBGR = np.copy(frame_read.frame)
 		im = imu.resize(frameBGR, width=720)
 		
@@ -262,59 +256,68 @@ if __name__ == '__main__':
 
 		#-------------------------------------------east part begins-------------------------------------
 
-		text = None
-		text_list, conf_list, output = roi_detect(im)
-		if len(conf_list) > 0:
-			text = text_list[np.argmax(conf_list)]
+		roi_detect(im)
+
 
 		#-----------------------------east part ends------------------------------
 
-		"""to_print = 0
-		rex1 = re.compile("^[0-9]{2}[A-Z]$")
-		rex2 = re.compile("^[0-9][A-Z]$")
-		if rex1.match(text) or rex2.match(text):
-			to_print = 1"""
+
 
 		print(len(qrlist))
-		if text != None:
-			for i in range(len(qrlist)):
-				Data = qrlist[i]
-				f = open('warehouse.csv','a')
-				f.write('%s,%s,\n'%(Data, text))
-				f.close()
+		for i in range(len(qrlist)):
+			Data = qrlist[i]
+			"""
+			#Print recognized text
+			if text != "" and text != " ":
+				text = text.replace('_', '')
+				text = text.replace('\\', '')
+				text = text.replace('/', '')
+				text = text.replace('O', '0')
+				print("text detected: %s"%(text))
 
-		cv2.imshow("Results", output)
+				to_print = 0
+				rex1 = re.compile("^[0-9]{2}[A-Z]$")
+				rex2 = re.compile("^[0-9][A-Z]$")
+				if rex1.match(text) or rex2.match(text):
+					to_print = 1
+
+				if(conf>60 and to_print):
+					print()
+					print()
+					print("YAYAYAYAYAYYYY")
+					print()
+					print()
+					f = open('warehouse.csv','a')
+					f.write('%s,%s,\n'%(Data, text))
+					f.close()
+			"""
+		cv2.imshow("Results", im)
 		key = cv2.waitKey(1) & 0xFF;
 		if key == ord("t"):
 			tello.takeoff()    
 		elif key == ord("l"):
 			tello.land()
 		elif key == ord("w"):
-			rcOut[1] = 10
+			rcOut[1] = 25
 		elif key == ord("a"):
-			rcOut[0] = 10
+			rcOut[0] = -25
 		elif key == ord("s"):
-			rcOut[1] = -10
+			rcOut[1] = -25
 		elif key == ord("d"):
-			rcOut[0] = -10
+			rcOut[0] = 25
 		elif key == ord("u"):
-			rcOut[2] = 10
+			rcOut[2] = 25
 		elif key == ord("j"):
-			rcOut[2] = -10
-		elif key == ord("c"):
-			rcOut[3] = 10
-		elif key == ord("v"):
-			rcOut[3] = -10
+			rcOut[2] = -25
 		elif key == ord("q"):
 			breaks
 		else:
 			rcOut = [0,0,0,0]
 
-		#print self.rcOut
-		tello.send_rc_control(int(rcOut[0]),int(rcOut[1]),int(rcOut[2]),int(rcOut[3]))
-		rcOut = [0,0,0,0]
+		# print self.rcOut
+		#tello.send_rc_control(int(rcOut[0]),int(rcOut[1]),int(rcOut[2]),int(rcOut[3]))
+		#rcOut = [0,0,0,0]
 
-		print("FPS: ", 1.0 / (time.time() - start_time))
 	f.close()
 
 tello.end()

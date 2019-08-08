@@ -22,6 +22,8 @@ elif key == ord("c"):
 	self.rcOut[3] = 50
 elif key == ord("v"):
 	self.rcOut[3] = -50
+
+
 else:
     self.rcOut = [0,0,0,0]
 
@@ -32,4 +34,6 @@ self.rcOut = [0,0,0,0]
 tello.end()
 capture.release()
 cv2.destroyAllWindows()
+
 tello.streamoff()
+
