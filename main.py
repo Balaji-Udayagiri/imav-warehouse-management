@@ -48,19 +48,19 @@ def text_better(text):
 			text[1]='4'
 
 
-		if(text[2]==4):
+		if(text[2]=='4'):
 			text[2]='A'
-		elif(text[2]==6):
+		elif(text[2]=='6'):
 			text[2]='C'
-		elif(text[2]==0):
+		elif(text[2]=='0'):
 			text[2]='D'
-		elif(text[2]==1):
+		elif(text[2]=='1'):
 			text[2]='I'
-		elif(text[2]==5):
+		elif(text[2]=='5'):
 			text[2]='S'
-		elif(text[2]==3):
+		elif(text[2]=='3'):
 			text[0]='B'
-		elif(text[2]==8):
+		elif(text[2]=='8'):
 			text[0]='B'
 
 	return text
