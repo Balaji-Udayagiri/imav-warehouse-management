@@ -61,6 +61,12 @@ def text_better(text):
 	return text
 
 def roi_detect(image):
+
+	min_confidence = 0.5
+	height = width = 320
+	east = "opencv-text-recognition/frozen_east_text_detection.pb" 			#enter the full path to east model
+	padding = 0.03
+
 	orig = image.copy()
 	(origH, origW) = image.shape[:2]
 
@@ -94,7 +100,7 @@ def roi_detect(image):
 
 	# decode the predictions, then  apply non-maxima suppression to
 	# suppress weak, overlapping bounding boxes
-	(rects, confidences) = decode_predictions(scores, geometry)
+	(rects, confidences) = decode_predictions(scores, geometry, min_confidence)
 	boxes = non_max_suppression(np.array(rects), probs=confidences)
 
 	# initialize the list of results
@@ -152,7 +158,7 @@ def roi_detect(image):
 
 
 
-def decode_predictions(scores, geometry):
+def decode_predictions(scores, geometry, min_confidence):
 	# grab the number of rows and columns from the scores volume, then
 	# initialize our set of bounding box rectangles and corresponding
 	# confidence scores
@@ -231,6 +237,7 @@ tello.streamoff()
 tello.streamon()
 rcout = np.zeros(4)
 
+
 def img_resize(im):
 	fx = 7.092159469231584126e+02
 	fy = 7.102890453175559742e+02
@@ -258,101 +265,117 @@ def img_resize(im):
 	resized = cv2.resize(im, dim, interpolation = cv2.INTER_LINEAR)
 	return resized
 
-# Main 
-if __name__ == '__main__':
 
-	min_confidence = 0.5
-	height = width = 320
-	east = "opencv-text-recognition/frozen_east_text_detection.pb" 			#enter the full path to east model
-	padding = 0.03
+def undistort(im):
+	K = np.array([[5.277994366999020031e+02,0.000000000000000000e+00,3.711893449350251331e+02], [0.000000000000000000e+00,5.249025134499009937e+02,2.671209192674019732e+02], [0.000000000000000000e+00,0.000000000000000000e+00,1.000000000000000000e+00
+	]], dtype = 'uint8')
+
+	dist = np.array([-1.941494206892808161e-01,-1.887639714668869206e-02,-5.988986169837847741e-03,-7.372353351255917582e-05,7.269696522356267065e-02], dtype = 'uint8')
+
+	K_inv = np.linalg.inv(K)
+
+	h , w = im.shape[:2]
+
+	newcameramtx, roi = cv2.getOptimalNewCameraMatrix(K,dist,(w,h),1,(w,h))
+
+	mapx,mapy = cv2.initUndistortRectifyMap(K,dist,None,newcameramtx,(w,h),5)
+	dst = cv2.remap(im,mapx,mapy,cv2.INTER_LINEAR)
+
+	x,y,w,h = roi
+	im = dst[y:y+h,x:x+w]
+
+	#print("ROI: ",x,y,w,h)
+	#cv2.imshow("lkgs",frame2use)
+
+	return(im)
+
+def hist_equalise(im):
+
+	im_yuv = cv2.cvtColor(im, cv2.COLOR_BGR2YUV)
+
+	# equalize the histogram of the Y channel
+	im_yuv[:,:,0] = cv2.equalizeHist(im_yuv[:,:,0])
+
+	# convert the YUV image back to RGB format
+	im = cv2.cvtColor(im_yuv, cv2.COLOR_YUV2BGR)
+	return(im)
+
+def text_finder(im):
+
+	# EAST + Tesseract
+	text = None
+	text_list, conf_list, output = roi_detect(im)
+	if len(conf_list) > 0:
+		text = text_list[np.argmax(conf_list)]
+
+	return text, output
+
+def check_format(text):
+	to_print = 0
+	rex1 = re.compile("^[0-9]{2}[A-Z]$")
+	rex2 = re.compile("^[0-9][A-Z]$")
+	if rex1.match(text) or rex2.match(text):
+		to_print = 1
+
+	return to_print
+
+def write_in_file(qrlist, text):
+
+	for i in range(len(qrlist)):
+		Data = qrlist[i]
+		f = open('warehouse.csv','a')
+		f.write('%s,%s,\n'%(Data, text))
+		f.close()
+
+def find_text_and_write(im, qrlist):
+	text, output = text_finder(im)
+	print(text)
+	check = 1
+	#check = check_format(text)
+
+	if text != None and check:
+		write_in_file(qrlist, text)
+
+	return output
+
+		
+if __name__ == '__main__':
+	
 
 	f = open('warehouse.csv','w')
 	f.write('%s,%s,\n'%("QR_Data", "Alphanum_text"))
 	f.close()
 
-	# Read feed
-	#camera = cv2.VideoCapture(0)
-	#capture = tello.get_video_capture()
+	# Read feed:
 	frame_read = tello.get_frame_read()
 
-	K = np.array([[5.277994366999020031e+02,0.000000000000000000e+00,3.711893449350251331e+02], [0.000000000000000000e+00,5.249025134499009937e+02,2.671209192674019732e+02], [0.000000000000000000e+00,0.000000000000000000e+00,1.000000000000000000e+00
-]], dtype = 'uint8')
-	dist = np.array([-1.941494206892808161e-01,-1.887639714668869206e-02,-5.988986169837847741e-03,-7.372353351255917582e-05,7.269696522356267065e-02], dtype = 'uint8')
-
-
 	while True:
-		#for FPS:
+		
+		# for FPS:
 		start_time = time.time()
 		
-		#ret, im = camera.read()
+		# Frame preprocess
 		frameBGR = np.copy(frame_read.frame)
-		
 		im = imu.resize(frameBGR, width=720)
-		
 
-		K_inv = np.linalg.inv(K)
+		# Undistortion --Uncomment for Tello-001
+		im = undistort(im)
 
-		h , w = im.shape[:2]
-
-		newcameramtx, roi = cv2.getOptimalNewCameraMatrix(K,dist,(w,h),1,(w,h))
-
-		mapx,mapy = cv2.initUndistortRectifyMap(K,dist,None,newcameramtx,(w,h),5)
-		dst = cv2.remap(im,mapx,mapy,cv2.INTER_LINEAR)
-
-		x,y,w,h = roi
-		im = dst[y:y+h,x:x+w]
-		#print("ROI: ",x,y,w,h)
-
-		#cv2.imshow("lkgs",frame2use)
-
-		'''---------EQUALISATION BEGINS------------ 
-		im_yuv = cv2.cvtColor(im, cv2.COLOR_BGR2YUV)
-
-		# equalize the histogram of the Y channel
-		im_yuv[:,:,0] = cv2.equalizeHist(im_yuv[:,:,0])
-
-		# convert the YUV image back to RGB format
-		im = cv2.cvtColor(im_yuv, cv2.COLOR_YUV2BGR)
-
-		---------EQUALISATION ENDS------------ '''
-		#im =  apply_contrast(im)
+		# QR-codes detect
 		im, qrpoints, qrlist = main(im)
-		if qrpoints != []:
-	  		print(qrlist)
 
-		#RESIZE
-		#CROP
+		if qrpoints != []:			# If QR detected, detect TEXT
+			print(qrlist)
 
-		#im = img_resize(im)
-		#im = apply_contrast(im)
-		#im = apply_thresh(im)
+			#im = img_resize(im)
+			#im = apply_contrast(im)
+			#im = apply_thresh(im)
+			#im = hist_equalise(im)
 
+			im = find_text_and_write(im, qrlist)
+				
 
-
-		#-------------------------------------------east part begins-------------------------------------
-
-		text = None
-		text_list, conf_list, output = roi_detect(im)
-		if len(conf_list) > 0:
-			text = text_list[np.argmax(conf_list)]
-
-		#-----------------------------east part ends------------------------------
-
-		"""to_print = 0
-		rex1 = re.compile("^[0-9]{2}[A-Z]$")
-		rex2 = re.compile("^[0-9][A-Z]$")
-		if rex1.match(text) or rex2.match(text):
-			to_print = 1"""
-
-		print(len(qrlist))
-		if text != None:
-			for i in range(len(qrlist)):
-				Data = qrlist[i]
-				f = open('warehouse.csv','a')
-				f.write('%s,%s,\n'%(Data, text))
-				f.close()
-
-		cv2.imshow("Results", output)
+		cv2.imshow("Results", im)
 		key = cv2.waitKey(1) & 0xFF;
 		if key == ord("t"):
 			tello.takeoff()    
@@ -384,10 +407,8 @@ if __name__ == '__main__':
 		rcOut = [0,0,0,0]
 
 		print("FPS: ", 1.0 / (time.time() - start_time))
-	f.close()
 
 tello.end()
-#capture.release()
 cv2.destroyAllWindows()
 tello.streamoff()
 
