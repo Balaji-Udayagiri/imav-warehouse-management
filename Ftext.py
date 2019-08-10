@@ -32,6 +32,8 @@ def text_better(text):
 			list1[0]='1'
 		elif(text[0]=='A'):
 			list1[0]='4'
+		elif(text[0]=='L'):
+			list1[0]='1'
 
 
 		if(text[1]=='S'):
@@ -235,7 +237,6 @@ tello = Tello()
 tello.connect()
 tello.streamoff()
 tello.streamon()
-rcout = np.zeros(4)
 
 
 def img_resize(im):
@@ -314,6 +315,7 @@ def check_format(text):
 	to_print = 0
 	rex1 = re.compile("^[0-9]{2}[A-Z]$")
 	rex2 = re.compile("^[0-9][A-Z]$")
+	text = str(text)
 	if rex1.match(text) or rex2.match(text):
 		to_print = 1
 
@@ -322,7 +324,7 @@ def check_format(text):
 def write_in_file(qrlist, text):
 
 	for i in range(len(qrlist)):
-		Data = qrlist[i]
+		Data = qrlist[i].strip("b''")
 		f = open('warehouse.csv','a')
 		f.write('%s,%s,\n'%(Data, text))
 		f.close()
@@ -330,8 +332,8 @@ def write_in_file(qrlist, text):
 def find_text_and_write(im, qrlist):
 	text, output = text_finder(im)
 	print(text)
-	check = 1
-	#check = check_format(text)
+	
+	check = check_format(text)
 
 	if text != None and check:
 		write_in_file(qrlist, text)
@@ -351,6 +353,8 @@ if __name__ == '__main__':
 
 	while True:
 		
+		rcout = np.zeros(4)
+
 		# for FPS:
 		start_time = time.time()
 		

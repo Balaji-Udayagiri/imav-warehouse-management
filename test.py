@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import re
 camera = cv2.VideoCapture(0)
 while False:
 	ret, im = camera.read()
@@ -10,14 +11,14 @@ while False:
 	else:
 		pass
 	#cv2.destroyAllWindows()
-
+"""
 img = cv2.imread("test.jpg")
 mask = (img[:][:][0]<210)*(img[:][:][1]<210)*(img[:][:][2]<210)
 mask = np.invert(mask)
 img1 = np.multiply(mask, img)
 cv2.imshow("labsdasjk",img1)
 cv2.waitKey(0)
-
+"""
 """
 lab= cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
 cv2.imshow("lab",lab)
@@ -44,3 +45,16 @@ cv2.imshow('final', final)
 cv2.waitKey(0)
 
 #_____END_____#"""
+
+text1 = "hsa"
+text2 = "22A"
+rex1 = re.compile("^[0-9]{2}[A-Z]$")
+rex2 = re.compile("^[0-9][A-Z]$")
+if rex1.match(text2) or rex2.match(text2):
+	print("fsdfs")
+else:
+	print("NO")
+
+texjs = "b'xsmn'"
+rag = texjs.strip("b''")
+print(rag)
