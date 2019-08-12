@@ -32,6 +32,11 @@ def text_better(text):
 			list1[0]='1'
 		elif(text[0]=='A'):
 			list1[0]='4'
+		elif(text[0]=='L'):
+			list1[0]='1'
+		elif(text[0]=='T'):
+			list1[0]='1'
+
 
 
 		if(text[1]=='S'):
@@ -338,11 +343,11 @@ if __name__ == '__main__':
 
 		#-----------------------------east part ends------------------------------
 
-		"""to_print = 0
+		to_print = 0
 		rex1 = re.compile("^[0-9]{2}[A-Z]$")
 		rex2 = re.compile("^[0-9][A-Z]$")
-		if rex1.match(text) or rex2.match(text):
-			to_print = 1"""
+		if rex1.match(str(text)) or rex2.match(str(text)):
+			to_print = 1
 
 		print(len(qrlist))
 		if text != None:
